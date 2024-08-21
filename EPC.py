@@ -543,13 +543,13 @@ if menu=="predictions":
     X_encoded_scaled_train, X_encoded_scaled_test, Y_epc_encoded_train, Y_epc_encoded_test= train_test_split(X_encoded_scaled,Y_epc_encoded,test_size=0.2,random_state=100)
     
     #creating XGBoost model
-    @st.cache_resource(ttl=2*3600)
+    @st.cache_resource(ttl=0.5*3600)
     def XGBmodel(X_encoded_scaled_train,Y_energy_train):
         model=XGBRegressor()
         model.fit(X_encoded_scaled_train,Y_energy_train)
         return model
     
-    @st.cache_resource(ttl=2*3600)
+    @st.cache_resource(ttl=0.5*3600)
     def XGBmodel_epc(X_encoded_scaled_train,Y_epc_encoded_train):
          model_epc=XGBClassifier(objective='multi:softmax', num_class=3, random_state=42)
          model_epc.fit(X_encoded_scaled_train,Y_epc_encoded_train)
@@ -659,7 +659,7 @@ if menu=='Retrofit':
 
      #ASHP quote      #ASHP quote           #ASHP quote           #ASHP quote           #ASHP quote          #ASHP quote          #ASHP quote            #ASHP quote          #ASHP quote
 
-     @st.cache_resource(ttl=2*3600)
+     @st.cache_resource(ttl=0.5*3600)
      def ashp_quote(quote_features):
           PATH = "chromedriver.exe"
 
