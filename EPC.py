@@ -14,6 +14,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.model_selection import cross_val_score
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -22,7 +23,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
-import time 
+import time
+
 
 
 
@@ -31,16 +33,17 @@ import time
 file_path = r'epc-model.csv'
 df = pd.read_csv(file_path)
 
-X = df.drop(['ENERGY_CONSUMPTION_CURRENT', 'CURRENT_ENERGY_RATING'], axis=1)
+X = df.drop(['ENERGY_CONSUMPTION_CURRENT', 'CURRENT_ENERGY_RATING','CO2','MAIN_FUEL'], axis=1)
 Y_energy=df['ENERGY_CONSUMPTION_CURRENT']
 Y_epc=df['CURRENT_ENERGY_RATING']
+Y_co2=df['CO2']
 
 #Home menu
 menu=st.sidebar.radio("Menu",["Home","predictions","Retrofit"])
 if menu=="Home":
-     st.title('AI for Building energy prediction')
+     st.title('AI for Building energy retrofit')
      st.markdown("""
-    <p style="font-size: 1.2em; color: #555555;">This software utilizes artificial intelligence to predict buildings' annual energy consumption and EPC (Energy Performance Certificate) 
+    <p style="font-size: 1.2em; color: #555555;">This software utilizes artificial intelligence to predict buildings' annual energy consumption, CO2 emission, and EPC (Energy Performance Certificate) 
                  label based on their features. Additionally, it can estimate the cost of various retrofits and analyze their impact on energy performance and EPC ratings. 
                  The model has been developed using the Energy Performance Certificate dataset for residential buildings in the UK, published by the Department for Levelling Up, 
                  Housing and Communities. </p> """, unsafe_allow_html=True)
@@ -60,8 +63,14 @@ if menu=="predictions":
 
     selected_floor_height=st.number_input("Please enter the floor height? ", min_value=2.00, max_value=10.00)
 
+    col1,col2= st.columns(2)
     categories_age_band=X['CONSTRUCTION_AGE_BAND'].unique()
-    selected_age_band=st.selectbox("Select construction year of the property: ", categories_age_band)
+    checkbox_age_band= col2.checkbox("New build")
+    if checkbox_age_band:
+         selected_age_band=col1.selectbox("Select construction year of the property: ", ['2012 onwards'])
+    else:
+         selected_age_band=col1.selectbox("Select construction year of the property: ", categories_age_band)
+          
 
     categories_glazed_type = X['GLAZED_TYPE'].unique()
     selected_glazed_type= st.selectbox("select glazing type: ", categories_glazed_type)
@@ -193,7 +202,9 @@ if menu=="predictions":
     checkbox_u_value= col2.checkbox('External wall U-value based on system default (construction age band, wall, and insulation type)')
     if checkbox_u_value:
          wall_type=col1.selectbox('Please enter external wall type:', ['Timber frame','Solid brick', 'Cavity wall'])
-         if wall_type=='Cavity wall':
+         if checkbox_age_band:
+              wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built'])    
+         elif wall_type=='Cavity wall':
              wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built','50-99mm insulation', 'more than 100mm insulation',
                                                                                         'filled cavity','filled cavity with 50-99mm insulation',
                                                                                         'filled cavity with more than 100mm insulation'])
@@ -201,8 +212,9 @@ if menu=="predictions":
              wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built','50-99mm insulation','100-149mm insulation', 'more than 150mm insulation'])
          elif wall_type=='Timber frame':
               wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built','Timber frame with internal insulation'])
-              
 
+
+              
 
              
          if wall_type=='Solid brick' and wall_insulation=='As built' and selected_age_band in ['before 1900','1900-1929','1930-1949','1950-1966']:
@@ -385,7 +397,9 @@ if menu=="predictions":
 
     else: 
          wall_type=col1.selectbox('Please enter external wall type:', ['Timber frame','Solid brick', 'Cavity wall'])
-         if wall_type=='Cavity wall':
+         if checkbox_age_band:
+              wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built'])
+         elif wall_type=='Cavity wall':
              wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built','50-99mm insulation', 'more than 100mm insulation',
                                                                                         'filled cavity','filled cavity with 50-99mm insulation',
                                                                                         'filled cavity with more than 100mm insulation'])
@@ -393,6 +407,8 @@ if menu=="predictions":
              wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built','50-99mm insulation','100-149mm insulation', 'more than 150mm insulation'])
          elif wall_type=='Timber frame':
               wall_insulation=col2.selectbox('Please enter external wall insulation: ', ['As built','Timber frame with internal insulation'])
+     
+     
          
          
      
@@ -403,11 +419,11 @@ if menu=="predictions":
 
     if checkbox_value_wall:
          if selected_property_type in ['Flat','Maisonette'] and selected_built_form=='Mid-Terrace':
-              wall_width=(flat_width*selected_floor_height)
-              external_wall_area=(2*wall_width)-glazing_area
+              wall_length=(flat_length*selected_floor_height)
+              external_wall_area=(2*wall_length)-glazing_area
          elif selected_property_type in ['Flat','Maisonette'] and selected_built_form=='Enclosed Mid-Terrace':
-              wall_width=(flat_width*selected_floor_height)
-              external_wall_area=(wall_width)-glazing_area
+              wall_length=(flat_length*selected_floor_height)
+              external_wall_area=(wall_length)-glazing_area
          elif selected_property_type in ['Flat','Maisonette'] and selected_built_form=='End-Terrace':
               wall_width=flat_width*selected_floor_height
               wall_length=flat_length*selected_floor_height
@@ -443,7 +459,10 @@ if menu=="predictions":
     
 
     categories_heating_system=X['HEATING_SYSTEM'].unique()
-    selected_heating_system=st.selectbox("Select type of main heating system: ", categories_heating_system)
+    if checkbox_age_band:
+         selected_heating_system=st.selectbox("Select type of main heating system: ", ['Air source heat pump with radiators or underfloor heating','Air source heat pump with warm air distribution' ])
+    else:
+         selected_heating_system=st.selectbox("Select type of main heating system: ", categories_heating_system)
 
     categories_hotwater=X['HOTWATER_DESCRIPTION'].unique()
     selected_hotwater= st.selectbox("select your hotwater system: ", categories_hotwater )
@@ -451,8 +470,8 @@ if menu=="predictions":
     categories_secondary_heating=X['SECONDHEAT_DESCRIPTION'].unique()
     selected_secondary_heating=st.selectbox("Select your secondary heating system: " , categories_secondary_heating )
 
-    categories_main_fuel=X['MAIN_FUEL'].unique()
-    selected_main_fuel= st.selectbox("what is the main fuel of energy system? ", categories_main_fuel)
+    #categories_main_fuel=X['MAIN_FUEL'].unique()
+    #selected_main_fuel= st.selectbox("what is the main fuel of energy system? ", categories_main_fuel)
 
     categories_ventilation=X['MECHANICAL_VENTILATION'].unique()
     selected_ventilation=st.selectbox("select type of ventilation system", categories_ventilation)
@@ -493,7 +512,7 @@ if menu=="predictions":
      'LOW_ENERGY_LIGHTING': [selected_low_energy_lighting],   #num
      'HOTWATER_DESCRIPTION': [selected_hotwater],   #cat
      'SECONDHEAT_DESCRIPTION': [selected_secondary_heating],   #cat
-     'MAIN_FUEL': [selected_main_fuel],   #cat
+     #'MAIN_FUEL': [selected_main_fuel],   #cat
      'FLOOR_HEIGHT': [selected_floor_height],   #num
      'PHOTO_SUPPLY': [selected_pv_supply],   #num
      'SOLAR_WATER_HEATING_FLAG': [selected_solar_hotwater],   #cat
@@ -539,8 +558,9 @@ if menu=="predictions":
     Y_epc_encoded=encoder.fit_transform(Y_epc)
 
 
-    X_encoded_scaled_train, X_encoded_scaled_test, Y_energy_train, Y_energy_test= train_test_split(X_encoded_scaled,Y_energy,test_size=0.2, random_state=100)
-    X_encoded_scaled_train, X_encoded_scaled_test, Y_epc_encoded_train, Y_epc_encoded_test= train_test_split(X_encoded_scaled,Y_epc_encoded,test_size=0.2,random_state=100)
+    X_encoded_scaled_train, X_encoded_scaled_test, Y_energy_train, Y_energy_test= train_test_split(X_encoded_scaled,Y_energy,test_size=0.05, random_state=100)
+    X_encoded_scaled_train, X_encoded_scaled_test, Y_epc_encoded_train, Y_epc_encoded_test= train_test_split(X_encoded_scaled,Y_epc_encoded,test_size=0.05,random_state=100)
+    X_encoded_scaled_train, X_encoded_scaled_test, Y_co2_train, Y_co2_test= train_test_split(X_encoded_scaled,Y_co2,test_size=0.05,random_state=100)
     
     #creating XGBoost model
     @st.cache_resource(ttl=0.5*3600)
@@ -551,17 +571,33 @@ if menu=="predictions":
     
     @st.cache_resource(ttl=0.5*3600)
     def XGBmodel_epc(X_encoded_scaled_train,Y_epc_encoded_train):
-         model_epc=XGBClassifier(objective='multi:softmax', num_class=3, random_state=42)
+         model_epc=XGBClassifier()
          model_epc.fit(X_encoded_scaled_train,Y_epc_encoded_train)
          return model_epc
     
-    
-   
+    @st.cache_resource(ttl=0.5*3600)
+    def XGBmodel_co2(X_encoded_scaled_train,Y_co2_train):
+         model_co2=XGBRegressor()
+         model_co2.fit(X_encoded_scaled_train,Y_co2_train)
+         return model_co2
+      
+    #cross val scores
+    #model_temp=XGBClassifier()
+    #cv_score1=cross_val_score(model_temp,X_encoded_scaled,Y_epc_encoded,cv=10,scoring='accuracy')
+    #st.write(cv_score1)
+    #model_temp2=XGBRegressor()
+    #cv_score2=cross_val_score(model_temp2,X_encoded_scaled,Y_energy,cv=10,scoring='r2')
+    #cv_score3=cross_val_score(model_temp2,X_encoded_scaled,Y_co2,cv=10,scoring='r2')
+    #st.write(cv_score2)
+    #st.write(cv_score3)
+
     model=XGBmodel(X_encoded_scaled_train,Y_energy_train)
     model_epc=XGBmodel_epc(X_encoded_scaled_train,Y_epc_encoded_train)
+    model_co2=XGBmodel_co2(X_encoded_scaled_train,Y_co2_train)
 
     st.session_state['ml_model']=model
     st.session_state['ml_model_epc']=model_epc
+    st.session_state['ml_model_co2']=model_co2
     st.session_state['encoding']=my_case_study_encoded_scaled
 
 
@@ -569,6 +605,16 @@ if menu=="predictions":
     y_predicted_energy=model.predict(my_case_study_encoded_scaled)
     y_pred_XGB=model.predict(X_encoded_scaled_test)
     y_pred_epc=model_epc.predict(my_case_study_encoded_scaled)
+    y_pred_co2=model_co2.predict(my_case_study_encoded_scaled)
+    y_co2_accuracy=model_co2.predict(X_encoded_scaled_test)
+    y_epc_accuracy=model_epc.predict(X_encoded_scaled_test)
+    #r2 and accuracy scores
+    r2_co2=r2_score(Y_co2_test,y_co2_accuracy)
+    r2_energy=r2_score(Y_energy_test,y_pred_XGB)
+    accuracy_epc=accuracy_score(Y_epc_encoded_test,y_epc_accuracy)
+    #st.write(r2_co2)
+    #st.write(r2_energy)
+    #st.write(accuracy_epc)
 
     epc_mapping={
           0:'B',
@@ -581,6 +627,7 @@ if menu=="predictions":
 
 
     st.session_state['predicted_energy_consumption']=y_predicted_energy
+    st.session_state['predicted_co2']=y_pred_co2
     st.session_state['predicted_epc']=epc_mapping[int(y_pred_epc)]
 
 
@@ -591,8 +638,11 @@ if menu=="predictions":
     #triggering prediction
     col1, col2, col3=st.columns(3)
 
-    if col3.button("predict annual energy consumption"):
-            col3.write(f"**annual energy consumption is estimated {int(y_predicted_energy)}** (KWh/sqm)")
+    if col2.button("Predict annual CO2 emission"):
+            col2.write(f"**CO2 emissions per square metre floor area per year is {int(y_pred_co2)}** (Kg/sqm)")
+     
+    if col3.button("Predict annual energy consumption"):
+            col3.write(f"**Annual primary energy consumption is estimated {int(y_predicted_energy)}** (KWh/sqm)")
      
     
     if col1.button("predict EPC rating"):
@@ -608,6 +658,8 @@ if menu=="predictions":
               col1.image("epc-f.jpg",width=400)
          elif y_pred_epc==5:
               col1.image("epc-g.jpg",width=400)
+
+    
      
 
     
@@ -630,12 +682,14 @@ if menu=='Retrofit':
      wall_insulation=st.session_state['wall_insulation']
      model_energy_retrofit=st.session_state['ml_model']
      model_epc_retrofit=st.session_state['ml_model_epc']
+     model_co2_retrofit=st.session_state['ml_model_co2']
      my_case_study_encoded_scaled=st.session_state['encoding']
      max_pv=st.session_state['max_pv']
      roof_area=st.session_state['roof_area']
      installed_capacity_pv=st.session_state['installed_pv']
      y_predicted_energy=st.session_state['predicted_energy_consumption']
      y_predicted_epc=st.session_state['predicted_epc']
+     y_predicted_co2=st.session_state['predicted_co2']
 
      my_case_study_retrofitted=my_case_study.copy()
 
@@ -1032,6 +1086,7 @@ if menu=='Retrofit':
                retrofit_cost_5=ashp_price_quote-gov_grant
                col2.write(f'**Estimated total cost after government grant is {int(retrofit_cost_5)} GBP**')
                my_case_study_retrofitted['HEATING_SYSTEM'] = 'Air source heat pump with radiators or underfloor heating'
+               #my_case_study_retrofitted['MAIN_FUEL']='All electric'
                
           elif heating_option=='No retrofit is required':
                retrofit_cost_5=0
@@ -1094,6 +1149,7 @@ if menu=='Retrofit':
 
      y_pred_epc_retrofitted=model_epc_retrofit.predict(my_case_study_retrofitted_encoded_scaled)
      y_pred_energy_retrofitted=model_energy_retrofit.predict(my_case_study_retrofitted_encoded_scaled)
+     y_pred_co2_retrofitted=model_co2_retrofit.predict(my_case_study_retrofitted_encoded_scaled)
 
      epc_mapping={
           0:'B',
@@ -1107,6 +1163,9 @@ if menu=='Retrofit':
      col1, col2, col3= st.columns(3)
      if col3.button("predict annual energy consumption"):
             col3.write(f"annual energy consumption before retrofit was **{int(y_predicted_energy)}** and after retrofit is estimated **{int(y_pred_energy_retrofitted)}** (KWh/sqm)")
+     
+     if col2.button("predict annual CO2 emission"):
+            col2.write(f"CO2 emissions per square metre floor area per year before retrofit was **{int(y_predicted_co2)}** and after retrofit is estimated **{int(y_pred_co2_retrofitted)}** (Kg/sqm)")
      
 
      if col1.button('predict EPC rating'):
