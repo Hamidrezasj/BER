@@ -33,7 +33,7 @@ import time
 file_path = r'epc-model.csv'
 df = pd.read_csv(file_path)
 
-X = df.drop(['ENERGY_CONSUMPTION_CURRENT', 'CURRENT_ENERGY_RATING','CO2','MAIN_FUEL'], axis=1)
+X = df.drop(['ENERGY_CONSUMPTION_CURRENT', 'CURRENT_ENERGY_RATING','CO2'], axis=1)
 Y_energy=df['ENERGY_CONSUMPTION_CURRENT']
 Y_epc=df['CURRENT_ENERGY_RATING']
 Y_co2=df['CO2']
@@ -470,8 +470,8 @@ if menu=="predictions":
     categories_secondary_heating=X['SECONDHEAT_DESCRIPTION'].unique()
     selected_secondary_heating=st.selectbox("Select your secondary heating system: " , categories_secondary_heating )
 
-    #categories_main_fuel=X['MAIN_FUEL'].unique()
-    #selected_main_fuel= st.selectbox("what is the main fuel of energy system? ", categories_main_fuel)
+    categories_main_fuel=X['MAIN_FUEL'].unique()
+    selected_main_fuel= st.selectbox("what is the main fuel of energy system? ", categories_main_fuel)
 
     categories_ventilation=X['MECHANICAL_VENTILATION'].unique()
     selected_ventilation=st.selectbox("select type of ventilation system", categories_ventilation)
@@ -512,7 +512,7 @@ if menu=="predictions":
      'LOW_ENERGY_LIGHTING': [selected_low_energy_lighting],   #num
      'HOTWATER_DESCRIPTION': [selected_hotwater],   #cat
      'SECONDHEAT_DESCRIPTION': [selected_secondary_heating],   #cat
-     #'MAIN_FUEL': [selected_main_fuel],   #cat
+     'MAIN_FUEL': [selected_main_fuel],   #cat
      'FLOOR_HEIGHT': [selected_floor_height],   #num
      'PHOTO_SUPPLY': [selected_pv_supply],   #num
      'SOLAR_WATER_HEATING_FLAG': [selected_solar_hotwater],   #cat
@@ -558,9 +558,9 @@ if menu=="predictions":
     Y_epc_encoded=encoder.fit_transform(Y_epc)
 
 
-    X_encoded_scaled_train, X_encoded_scaled_test, Y_energy_train, Y_energy_test= train_test_split(X_encoded_scaled,Y_energy,test_size=0.05, random_state=100)
-    X_encoded_scaled_train, X_encoded_scaled_test, Y_epc_encoded_train, Y_epc_encoded_test= train_test_split(X_encoded_scaled,Y_epc_encoded,test_size=0.05,random_state=100)
-    X_encoded_scaled_train, X_encoded_scaled_test, Y_co2_train, Y_co2_test= train_test_split(X_encoded_scaled,Y_co2,test_size=0.05,random_state=100)
+    X_encoded_scaled_train, X_encoded_scaled_test, Y_energy_train, Y_energy_test= train_test_split(X_encoded_scaled,Y_energy,test_size=0.2, random_state=100)
+    X_encoded_scaled_train, X_encoded_scaled_test, Y_epc_encoded_train, Y_epc_encoded_test= train_test_split(X_encoded_scaled,Y_epc_encoded,test_size=0.2,random_state=100)
+    X_encoded_scaled_train, X_encoded_scaled_test, Y_co2_train, Y_co2_test= train_test_split(X_encoded_scaled,Y_co2,test_size=0.2,random_state=100)
     
     #creating XGBoost model
     @st.cache_resource(ttl=0.5*3600)
@@ -1086,7 +1086,7 @@ if menu=='Retrofit':
                retrofit_cost_5=ashp_price_quote-gov_grant
                col2.write(f'**Estimated total cost after government grant is {int(retrofit_cost_5)} GBP**')
                my_case_study_retrofitted['HEATING_SYSTEM'] = 'Air source heat pump with radiators or underfloor heating'
-               #my_case_study_retrofitted['MAIN_FUEL']='All electric'
+               my_case_study_retrofitted['MAIN_FUEL']='All electric'
                
           elif heating_option=='No retrofit is required':
                retrofit_cost_5=0
