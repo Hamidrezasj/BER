@@ -726,6 +726,7 @@ if menu=='Retrofit':
 
           opts=FirefoxOptions()
           opts.add_argument("--headless")
+          opts.add_argument("--disable-gpu")
 
 
           driver=webdriver.Firefox(options=opts)
