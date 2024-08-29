@@ -23,7 +23,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver import FirefoxOptions
 import time
+import os,sys
 
 
 
@@ -715,13 +717,18 @@ if menu=='Retrofit':
 
      @st.cache_resource(ttl=0.5*3600)
      def ashp_quote(quote_features):
-          PATH = "chromedriver.exe"
+          #PATH = "chromedriver.exe"
+          def installff():
+              os.system('sbase install geckodriver')
+              os.system('ln -s /home/appuser/venv/lib/python3.7/site-packages/seleniumbase/drivers/geckodriver /home/appuser/venv/bin/geckodriver')
 
-          chrome_options= webdriver.ChromeOptions()
-          chrome_options.add_argument("--headless")
+          _ = installff()
+
+          opts=FirefoxOptions()
+          opts.add_argument("--headless")
 
 
-          driver=webdriver.Chrome(options=chrome_options)
+          driver=webdriver.Firefox(options=opts)
           driver.get('http://asf-hp-cost-demo-l-b-1046547218.eu-west-1.elb.amazonaws.com/')
 
           drop_down_1= Select(driver.find_element(By.NAME,"region"),)
