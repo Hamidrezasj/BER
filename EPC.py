@@ -41,7 +41,7 @@ Y_epc=df['CURRENT_ENERGY_RATING']
 Y_co2=df['CO2']
 
 #Home menu
-menu=st.sidebar.radio("Menu",["Home","predictions","Retrofit"])
+menu=st.sidebar.radio("Menu",["Home","Predictions","Retrofit"])
 if menu=="Home":
      st.title('AI for Building energy retrofit')
      st.markdown("""
@@ -52,7 +52,7 @@ if menu=="Home":
      st.image("hr_image.jpeg", width=600)
 
 
-if menu=="predictions":
+if menu=="Predictions":
     st.title('Building features')
     #select Boxes-categorical features
     categories_property_types = X['PROPERTY_TYPE'].unique()
@@ -77,7 +77,7 @@ if menu=="predictions":
     categories_glazed_type = X['GLAZED_TYPE'].unique()
     selected_glazed_type= st.selectbox("select glazing type: ", categories_glazed_type)
 
-    selected_multi_glazed_proportion=st.number_input("multi glazed area of the total glazed area of the property? (%) ", min_value=0, max_value=100)
+    selected_multi_glazed_proportion=st.number_input("What percentage of the total window area in the property is multi-glazed? (%) ", min_value=0, max_value=100)
 
     selected_glazed_area='Normal'
 
@@ -119,7 +119,7 @@ if menu=="predictions":
               glazing_area= selected_floor_area*0.1435+0.403
      
           
-         col1.write(f"**calculated glazing area is {glazing_area:.2f} square meters**")
+         col1.write(f"**Calculated glazing area is {glazing_area:.2f} square meters**")
          
          
     else:
@@ -191,7 +191,7 @@ if menu=="predictions":
 
     
     categories_floor_type=X['FLOOR_TYPE'].unique()
-    selected_floor_type=st.selectbox("select type of the floor: ", categories_floor_type)
+    selected_floor_type=st.selectbox("Select type of the floor: ", categories_floor_type)
 
     categories_floor_insulation=X['FLOOR_INSULATION'].unique()
     if selected_floor_type=='Another dwelling or premises below':
@@ -200,7 +200,7 @@ if menu=="predictions":
          selected_floor_insulation=st.selectbox("insulation in the floor: ",['As built','Insulated-at least 50mm insulation'])
      
     col1,col2=st.columns(2)    
-    selected_wall_u_value=col1.number_input('please enter U-Value of the external wall', min_value=0.00, max_value=10.00)
+    selected_wall_u_value=col1.number_input('Please enter U-Value of the external wall', min_value=0.00, max_value=10.00)
     checkbox_u_value= col2.checkbox('External wall U-value based on system default (construction age band, wall, and insulation type)')
     if checkbox_u_value:
          wall_type=col1.selectbox('Please enter external wall type:', ['Timber frame','Solid brick', 'Cavity wall'])
@@ -395,7 +395,7 @@ if menu=="predictions":
               selected_wall_u_value=0.3
          
           
-         col1.write(f"**calculated external wall U-value is {selected_wall_u_value:.2f} W/sqm**")
+         col1.write(f"**Calculated external wall U-value is {selected_wall_u_value:.2f} W/sqm**")
 
     else: 
          wall_type=col1.selectbox('Please enter external wall type:', ['Timber frame','Solid brick', 'Cavity wall'])
@@ -415,7 +415,7 @@ if menu=="predictions":
          
      
     col1,col2=st.columns(2)
-    checkbox_value_wall=col2.checkbox('external wall area based on system default (property type, built form, floor area, floor height, and glazing area)')
+    checkbox_value_wall=col2.checkbox('External wall area based on system default (property type, built form, floor area, floor height, and glazing area)')
     flat_width=(selected_floor_area/2)**0.5
     flat_length=2*flat_width
 
@@ -441,13 +441,13 @@ if menu=="predictions":
               wall_width=flat_width*selected_floor_height
               external_wall_area=(6*wall_width)-glazing_area
           
-         col1.write(f"**calculated wall area is {external_wall_area:.2f} square meters**")
+         col1.write(f"**Calculated wall area is {external_wall_area:.2f} square meters**")
 
     else:
-         external_wall_area=col1.number_input('please enter the area of the external wall')
+         external_wall_area=col1.number_input('Please enter the area of the external wall')
     
     categories_roof_type=X['ROOF_TYPE'].unique()
-    selected_roof_type= st.selectbox("select type of roof: ", categories_roof_type)
+    selected_roof_type= st.selectbox("Select type of roof: ", categories_roof_type)
 
     if selected_roof_type=='Another dwelling or premises above':
          selected_roof_insulation=st.selectbox('Select type of roof insulation: ',['Another dwelling or premises above'])
@@ -467,21 +467,21 @@ if menu=="predictions":
          selected_heating_system=st.selectbox("Select type of main heating system: ", categories_heating_system)
 
     categories_hotwater=X['HOTWATER_DESCRIPTION'].unique()
-    selected_hotwater= st.selectbox("select your hotwater system: ", categories_hotwater )
+    selected_hotwater= st.selectbox("Select your hot water system: ", categories_hotwater )
 
     categories_secondary_heating=X['SECONDHEAT_DESCRIPTION'].unique()
     selected_secondary_heating=st.selectbox("Select your secondary heating system: " , categories_secondary_heating )
 
     categories_main_fuel=X['MAIN_FUEL'].unique()
-    selected_main_fuel= st.selectbox("what is the main fuel of energy system? ", categories_main_fuel)
+    selected_main_fuel= st.selectbox("What is the main fuel of energy system? ", categories_main_fuel)
 
     categories_ventilation=X['MECHANICAL_VENTILATION'].unique()
-    selected_ventilation=st.selectbox("select type of ventilation system", categories_ventilation)
+    selected_ventilation=st.selectbox("Select type of ventilation system", categories_ventilation)
 
-    selected_low_energy_lighting=st.number_input("percentage of low energy lighting in the property? (%) ", min_value=0, max_value=100)
+    selected_low_energy_lighting=st.number_input("Percentage of low energy lighting in the property? (%) ", min_value=0, max_value=100, help='What percentage of lighting in the property is low-energy (such as LED)? ')
 
     categories_solar_hotwater=X['SOLAR_WATER_HEATING_FLAG'].unique()
-    selected_solar_hotwater=st.selectbox('whether the hotwater in the Property is from solar', categories_solar_hotwater)
+    selected_solar_hotwater=st.selectbox('Is the hot water in the property heated using a solar water heating system?', categories_solar_hotwater)
     
     max_pv=float(round(0.12*(selected_floor_area/2)*(1/0.819),1))
     st.session_state['max_pv']=max_pv
@@ -565,19 +565,19 @@ if menu=="predictions":
     X_encoded_scaled_train, X_encoded_scaled_test, Y_co2_train, Y_co2_test= train_test_split(X_encoded_scaled,Y_co2,test_size=0.2,random_state=100)
     
     #creating XGBoost model
-    @st.cache_resource(ttl=0.5*3600)
+    @st.cache_resource(ttl=2*3600)
     def XGBmodel(X_encoded_scaled_train,Y_energy_train):
         model=XGBRegressor()
         model.fit(X_encoded_scaled_train,Y_energy_train)
         return model
     
-    @st.cache_resource(ttl=0.5*3600)
+    @st.cache_resource(ttl=2*3600)
     def XGBmodel_epc(X_encoded_scaled_train,Y_epc_encoded_train):
          model_epc=XGBClassifier()
          model_epc.fit(X_encoded_scaled_train,Y_epc_encoded_train)
          return model_epc
     
-    @st.cache_resource(ttl=0.5*3600)
+    @st.cache_resource(ttl=2*3600)
     def XGBmodel_co2(X_encoded_scaled_train,Y_co2_train):
          model_co2=XGBRegressor()
          model_co2.fit(X_encoded_scaled_train,Y_co2_train)
@@ -715,7 +715,7 @@ if menu=='Retrofit':
 
      #ASHP quote      #ASHP quote           #ASHP quote           #ASHP quote           #ASHP quote          #ASHP quote          #ASHP quote            #ASHP quote          #ASHP quote
 
-     @st.cache_resource(ttl=0.5*3600)
+     @st.cache_resource(ttl=2*3600)
      def ashp_quote(quote_features):
           #PATH = "chromedriver.exe"
           def installff():
