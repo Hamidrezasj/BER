@@ -969,6 +969,10 @@ elif  st.session_state.menu== menu_options[9]:
                submit = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@id='edit-submit']")))
                submit.click()
 
+               #number of rooms
+               input_3=driver.find_element(By.XPATH,"//input[@id='edit-submitted-no-of-bedrooms']")
+               input_3.send_keys(quote_features['num_rooms'])
+
                wait = WebDriverWait(driver, 10)
                submit = wait.until(EC.element_to_be_clickable((By.XPATH, "//label[@for='edit-submitted-property-type-detached']//div[@class='radio-btn-inner']")))
                submit.click()
@@ -1047,7 +1051,7 @@ elif  st.session_state.menu== menu_options[9]:
 
                #number of radiator
                input_2=driver.find_element(By.XPATH,"//input[@id='edit-submitted-no-of-radiators']")
-               input_2.send_keys(quote_features['num_rooms'])
+               input_2.send_keys(quote_features['num_radiator'])
 
                wait = WebDriverWait(driver, 10)
                submit = wait.until(EC.element_to_be_clickable((By.XPATH, "//label[@for='edit-submitted-radiator-pipes-copper-15mm-or-more']//div[@class='radio-btn-inner']")))
@@ -1075,11 +1079,14 @@ elif  st.session_state.menu== menu_options[9]:
     
  
      floor_area=str(st.session_state.my_case_study['TOTAL_FLOOR_AREA'].iloc[0])
-     num_rooms=round((st.session_state.my_case_study['TOTAL_FLOOR_AREA'].iloc[0])/40)+2
+     num_radiator=round((st.session_state.my_case_study['TOTAL_FLOOR_AREA'].iloc[0])/40)+2
+     num_radiator=str(num_radiator)
+     num_rooms=round((st.session_state.my_case_study['TOTAL_FLOOR_AREA'].iloc[0])/40)+1
      num_rooms=str(num_rooms)
      quote_features={
-          'num_rooms': num_rooms,
-          'floor_area': floor_area
+          'num_radiator': num_radiator,
+          'floor_area': floor_area,
+          'num_rooms':num_rooms
      }
 
      ashp_price_quote=quote_request(quote_features)
